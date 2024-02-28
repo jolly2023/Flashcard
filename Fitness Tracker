@@ -1,0 +1,113 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+
+public class FitnessTrackerApp extends JFrame {
+    private ArrayList<Workout> workouts = new ArrayList<>();
+    private JComboBox<String> exerciseTypeComboBox;
+    private JTextField durationField;
+
+    public FitnessTrackerApp() {
+        setTitle("Fitness Tracker");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new GridLayout(4, 2, 10, 10));
+
+        String[] exerciseTypes = {"Running", "Cycling", "Weightlifting", "Swimming", "Yoga", "Other"};
+        exerciseTypeComboBox = new JComboBox<>(exerciseTypes);
+        add(new JLabel("Exercise Type:"));
+        add(exerciseTypeComboBox);
+
+        durationField = new JTextField();
+        add(new JLabel("Duration (mins):"));
+        add(durationField);
+
+        JButton addWorkoutButton = new JButton("Add Workout");
+        addWorkoutButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addWorkout();
+            }
+        });
+        add(addWorkoutButton);
+
+        JTextArea workoutsTextArea = new JTextArea();
+        add(new JScrollPane(workoutsTextArea));
+
+        setVisible(true);
+    }
+
+    private void addWorkout() {
+        String exerciseType = (String) exerciseTypeComboBox.getSelectedItem();
+        int duration;
+        try {
+            duration = Integer.parseInt(durationField.getText());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid duration.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String dateTimeString = now.format(formatter);
+
+        Workout workout = new Workout(exerciseType, duration, dateTimeString);
+        workouts.add(workout);
+
+        updateWorkoutsTextArea();
+        saveWorkoutsToFile();
+    }
+
+    private void updateWorkoutsTextArea() {
+        JTextArea workoutsTextArea = (JTextArea) ((JScrollPane) getContentPane().getComponent(7)).getViewport().getView();
+        workoutsTextArea.setText("");
+        for (int i = 0; i < workouts.size(); i++) {
+            workoutsTextArea.append((i + 1) + ". " + workouts.get(i) + "\n");
+        }
+    }
+
+    private void saveWorkoutsToFile() {
+        try {
+            FileWriter writer = new FileWriter("workouts.txt");
+            for (Workout workout : workouts) {
+                writer.write(workout.toString() + "\n");
+            }
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new FitnessTrackerApp();
+            }
+        });
+    }
+}
+
+class Workout {
+    private String exerciseType;
+    private int duration;
+    private String dateTime;
+
+    public Workout(String exerciseType, int duration, String dateTime) {
+        this.exerciseType = exerciseType;
+        this.duration = duration;
+        this.dateTime = dateTime;
+    }
+
+    @Override
+    public String toString() {
+        return exerciseType + " - " + duration + " mins - " + dateTime;
+    }
+}
